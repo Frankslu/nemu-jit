@@ -22,7 +22,7 @@ CXX := g++
 endif
 LD := $(CXX)
 INCLUDES = $(addprefix -I, $(INC_PATH))
-CFLAGS  := -MMD -Wall -Werror $(INCLUDES) $(CFLAGS)
+CFLAGS  := -MMD $(INCLUDES) $(CFLAGS)
 LDFLAGS := $(LDFLAGS)
 
 OBJS = $(SRCS:%.c=$(OBJ_DIR)/%.o) $(CXXSRC:%.cc=$(OBJ_DIR)/%.o)
@@ -31,17 +31,17 @@ OBJS = $(SRCS:%.c=$(OBJ_DIR)/%.o) $(CXXSRC:%.cc=$(OBJ_DIR)/%.o)
 $(OBJ_DIR)/%.o: %.c
 	@echo + CC $<
 	@mkdir -p $(dir $@)
-	@$(CC) $(CFLAGS) -c -o $@ $<
 	@$(CC) $(CFLAGS) -E -C -P -o $(@:%.o=%.i) $<
 	-@clang-format -i $(@:%.o=%.i)
+	@$(CC) $(CFLAGS) -std=c17 -c -o $@ $<
 	$(call call_fixdep, $(@:.o=.d), $@)
 
 $(OBJ_DIR)/%.o: %.cc
 	@echo + CXX $<
 	@mkdir -p $(dir $@)
-	@$(CXX) $(CFLAGS) $(CXXFLAGS) -c -o $@ $<
 	@$(CXX) $(CFLAGS) $(CXXFLAGS) -E -C -P -o $(@:%.o=%.i) $<
 	-@clang-format -i $(@:%.o=%.i)
+	@$(CXX) $(CFLAGS) $(CXXFLAGS) -c -o $@ $<
 	$(call call_fixdep, $(@:.o=.d), $@)
 
 # Depencies

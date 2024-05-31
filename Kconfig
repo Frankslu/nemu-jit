@@ -122,6 +122,26 @@ config CC_ASAN
   depends on MODE_SYSTEM
   bool "Enable address sanitizer"
   default n
+
+config CC_UBSAN
+  bool "Enable undefined behavior sanitizer"
+  default n
+
+config CC_UB
+  bool "Enable undefined behavior test"
+  default n
+
+config CC_WALL
+  bool "Enable Wall and Werror"
+  default y
+
+config CC_STDC
+  bool "Enable pedantic"
+  default n
+
+config CC_WEXTRA
+  bool "Enable Wextra"
+  default n
 endmenu
 
 menu "Testing and Debugging"

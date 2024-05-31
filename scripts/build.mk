@@ -32,12 +32,16 @@ $(OBJ_DIR)/%.o: %.c
 	@echo + CC $<
 	@mkdir -p $(dir $@)
 	@$(CC) $(CFLAGS) -c -o $@ $<
+	@$(CC) $(CFLAGS) -E -C -P -o $(@:%.o=%.i) $<
+	-@clang-format -i $(@:%.o=%.i)
 	$(call call_fixdep, $(@:.o=.d), $@)
 
 $(OBJ_DIR)/%.o: %.cc
 	@echo + CXX $<
 	@mkdir -p $(dir $@)
 	@$(CXX) $(CFLAGS) $(CXXFLAGS) -c -o $@ $<
+	@$(CXX) $(CFLAGS) $(CXXFLAGS) -E -C -P -o $(@:%.o=%.i) $<
+	-@clang-format -i $(@:%.o=%.i)
 	$(call call_fixdep, $(@:.o=.d), $@)
 
 # Depencies

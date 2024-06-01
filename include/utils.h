@@ -102,4 +102,8 @@ ENUM_TAB(log, log_type, set_log_id);
 
 #define TODO() panic("please implement me")
 
+static inline bool streq(const char *a, const char *b) {
+  return strcmp(a, b) == 0;
+}
+
 #endif

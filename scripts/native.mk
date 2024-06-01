@@ -50,6 +50,9 @@ clangd:
 	bear -- make -B -j
 	mv compile_commands.json build
 
+spike:
+	$(MAKE) -B $(DIFF_REF_SO)
+
 clean-tools = $(dir $(shell find ./tools -maxdepth 2 -mindepth 2 -name "Makefile"))
 $(clean-tools):
 	-@$(MAKE) -s -C $@ clean

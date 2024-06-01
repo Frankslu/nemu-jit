@@ -83,6 +83,15 @@
 // NOTE2: each element in the container can be a tuple
 #define MAP(c, f) c(f)
 
+#define SETID(x) x,
+#define GETID(x, table) concat3(get_, table, _id)(x)
+#define TAB_START(table) concat(table, _start)=-1,
+#define TAB_LEN(table) concat(table, _cnt)
+#define ENUM_TAB(table, list, f) enum concat(table, Tab) \
+  {TAB_START(table) MAP(list, f) TAB_LEN(table)}
+#define for_idx_in_table(idx, table) for (int idx = 0; idx < TAB_LEN(table); idx++)
+// you need to implement "list", "f" and "get_xxx_id" 
+
 #define BITMASK(bits) ((1ull << (bits)) - 1)
 #define BITS(x, hi, lo) (((x) >> (lo)) & BITMASK((hi) - (lo) + 1)) // similar to x[hi:lo] in verilog
 #define SEXT(x, len) ({ struct { int64_t n : len; } __x = { .n = x }; (uint64_t)__x.n; })

@@ -18,16 +18,30 @@
 extern uint64_t g_nr_guest_inst;
 
 #ifndef CONFIG_TARGET_AM
-FILE *log_fp = NULL;
+FILE *log_fp[TAB_LEN(log)] = {0};
 
-void init_log(const char *log_file) {
-  log_fp = stdout;
-  if (log_file != NULL) {
-    FILE *fp = fopen(log_file, "w");
-    Assert(fp, "Can not open '%s'", log_file);
-    log_fp = fp;
+#define logfile_name(x) [GETID(x, log)] = str(GETID(x, log)),
+const char *const log_file[] = {MAP(log_type, logfile_name)};
+
+void init_log(const char *log_dir) {
+  for_idx_in_table(i, log) {
+    char file[256];
+    log_fp[i] = stdout;
+    if (log_dir != NULL) {
+      unsigned long len = strlen(log_file[i]) + strlen(log_dir);
+      Assert(len < 256, "log file name %s is too long, length is %lu",
+             log_file[i], len);
+
+      strncpy(file, log_dir, 255);
+      strncat(file, log_file[i], 255);
+      strncat(file, ".txt", 255);
+      
+      FILE *fp = fopen(file, "w");
+      Assert(fp, "Can not open '%s'", log_dir);
+      log_fp[i] = fp;
+    }
+    Log("%s is written to %s", log_file[i], log_dir ? file : "stdout");
   }
-  Log("Log is written to %s", log_file ? log_file : "stdout");
 }
 
 bool log_enable() {

@@ -56,22 +56,50 @@ uint64_t get_time();
 
 #define ANSI_FMT(str, fmt) fmt str ANSI_NONE
 
-#define log_write(...) IFDEF(CONFIG_TARGET_NATIVE_ELF, \
+// ----------- debug -----------
+#define log_type(f) \
+  f(nemu) f(mem) f(func) f(excep) f(sysc)
+
+#define get_log_id(x) concat(x,_log)
+#define set_log_id(x) SETID(get_log_id(x))
+
+ENUM_TAB(log, log_type, set_log_id);
+
+#define log_write(type, ...) IFDEF(CONFIG_TARGET_NATIVE_ELF, \
   do { \
-    extern FILE* log_fp; \
+    extern FILE* log_fp[]; \
     extern bool log_enable(); \
     if (log_enable()) { \
-      fprintf(log_fp, __VA_ARGS__); \
-      fflush(log_fp); \
+      fprintf(log_fp[GETID(type, log)], __VA_ARGS__); \
+      fflush(log_fp[GETID(type, log)]); \
     } \
   } while (0) \
 )
 
-#define _Log(...) \
+#define _Log(type, ...) \
   do { \
     printf(__VA_ARGS__); \
-    log_write(__VA_ARGS__); \
+    log_write(type, __VA_ARGS__); \
   } while (0)
 
+#define Log(format, ...) \
+  _Log(nemu, ANSI_FMT("[%s:%d %s] " format, ANSI_FG_BLUE) "\n", \
+    __FILE__, __LINE__, __func__, ## __VA_ARGS__)
+
+#define Assert(cond, format, ...) \
+  do { \
+    if (!(cond)) { \
+      MUXDEF(CONFIG_TARGET_AM, printf(ANSI_FMT(format, ANSI_FG_RED) "\n", ## __VA_ARGS__), \
+        (fflush(stdout), fprintf(stderr, ANSI_FMT(format, ANSI_FG_RED) "\n", ##  __VA_ARGS__))); \
+      IFNDEF(CONFIG_TARGET_AM, extern FILE* log_fp[]; fflush(log_fp[GETID(nemu,log)])); \
+      extern void assert_fail_msg(); \
+      assert_fail_msg(); \
+      assert(cond); \
+    } \
+  } while (0)
+
+#define panic(format, ...) Assert(0, format, ## __VA_ARGS__)
+
+#define TODO() panic("please implement me")
 
 #endif

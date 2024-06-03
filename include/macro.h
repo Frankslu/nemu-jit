@@ -106,6 +106,8 @@
 #define unlikely(cond) __builtin_expect(cond, 0)
 #endif
 
+#define typeof(x) __typeof__(x)
+
 // for AM IOE
 #define io_read(reg) \
   ({ reg##_T __io_param; \

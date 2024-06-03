@@ -106,4 +106,10 @@ static inline bool streq(const char *a, const char *b) {
   return strcmp(a, b) == 0;
 }
 
+static inline char *stralloc(char *s) {
+  size_t size = strlen(s) + 1;
+  char *tmp = (char *)malloc(strlen(s) + 1);
+  return (char *)memcpy(tmp, s, size);
+}
+
 #endif

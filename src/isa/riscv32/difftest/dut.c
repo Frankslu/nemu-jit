@@ -19,14 +19,17 @@
 
 bool isa_difftest_checkregs(CPU_state *ref_r, vaddr_t pc) {
   for (int i = 0; i < GPR_NUM; i++) {
-    if (ref_r->gpr[i] != cpu.gpr[i]) {
-      printf("ref_r->gpr[%d] = 0x%lx, cpu.gpr[%d] = 0x%lx\n", i, ref_r->gpr[i],
-             i, cpu.gpr[i]);
+    if (ref_r->gpr[i] != gpr(i)) {
+      printf(ANSI_FMT("%s mismatch:\n", ANSI_FG_RED), reg_name(i));
+      printf(ANSI_FMT("ref: ", ANSI_FG_RED) FMT_WORD "\n", fmt_word(ref_r->gpr[i]));
+      printf(ANSI_FMT("dut: ", ANSI_FG_RED) FMT_WORD "\n", fmt_word(gpr(i)));
       return false;
     }
   }
   if (ref_r->pc != pc) {
-    printf("ref_r->pc = 0x%lx, pc = 0x%lx\n", ref_r->pc, pc);
+    printf(ANSI_FMT("pc mismatch:\n", ANSI_FG_RED));
+    printf(ANSI_FMT("ref: ", ANSI_FG_RED) FMT_WORD "\n", fmt_word(ref_r->pc));
+    printf(ANSI_FMT("dut: ", ANSI_FG_RED) FMT_WORD "\n", fmt_word(pc));
     return false;
   }
   return true;

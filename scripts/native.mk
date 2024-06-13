@@ -24,11 +24,17 @@ compile_git:
 
 # Some convenient rules
 
+ifdef CONFIG_NEMU_MAIN
 override ARGS ?= --log=$(BUILD_DIR)/log/
 override ARGS += $(ARGS_DIFF)
+IMG ?=
+endif
+ifdef CONFIG_EXPR_TEST
+override ARGS += $(NEMU_HOME)/tools/gen-expr/build/input.txt
+IMG :=
+endif
 
 # Command to execute NEMU
-IMG ?=
 NEMU_EXEC := $(BINARY) $(ARGS) $(IMG)
 
 run-env: $(BINARY) $(DIFF_REF_SO)
@@ -47,8 +53,8 @@ vgrind: run-env
 	valgrind --leak-check=full -s $(NEMU_EXEC)
 
 clangd:
-	bear -- make -B -j
-	mv compile_commands.json build
+	bear -- make -B -j8 run
+	cp compile_commands.json build
 
 spike:
 	$(MAKE) -B $(DIFF_REF_SO)

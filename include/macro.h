@@ -107,6 +107,14 @@
 #endif
 
 #define typeof(x) __typeof__(x)
+#define MAX(x, y) ({ \
+  typeof(x) _x_tmp_ = (x); \
+  typeof(y) _y_tmp_ = (y); \
+  _x_tmp_ > _y_tmp_ ? _x_tmp_ : _y_tmp_;})
+#define MIN(x, y) ({ \
+  typeof(x) _x_tmp_ = (x); \
+  typeof(y) _y_tmp_ = (y); \
+  _x_tmp_ < _y_tmp_ ? _x_tmp_ : _y_tmp_;})
 
 // for AM IOE
 #define io_read(reg) \

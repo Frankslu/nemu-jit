@@ -106,9 +106,25 @@ static inline bool streq(const char *a, const char *b) {
   return strcmp(a, b) == 0;
 }
 
+static inline bool strneq(const char *a, const char *b, int n) {
+  return strncmp(a, b, n) == 0;
+}
+
 static inline char *stralloc(char *s) {
   size_t size = strlen(s) + 1;
   char *tmp = (char *)malloc(strlen(s) + 1);
+  return (char *)memcpy(tmp, s, size);
+}
+
+static inline char *strminalloc(char *s, int n) {
+  size_t size = MIN(strlen(s) + 1, n);
+  char *tmp = (char *)malloc(size * sizeof(char));
+  return (char *)memcpy(tmp, s, size);
+}
+
+static inline char *strmaxalloc(char *s, int n) {
+  size_t size = MAX(strlen(s) + 1, n);
+  char *tmp = (char *)malloc(size * sizeof(char));
   return (char *)memcpy(tmp, s, size);
 }
 

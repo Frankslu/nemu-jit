@@ -37,19 +37,16 @@ void isa_reg_display() {
   }
 }
 
-word_t isa_reg_str2val(const char *s, bool *success) {
-  *success = false;
+word_t *isa_reg_str2val(const char *s) {
   for (int i = 0; i < 2; i++) {
     for (int j = 0; j < 32; j++) {
       if (streq(s, regs[i][j])) {
-        *success = true;
-        return gpr(j);
+        return &gpr(j);
       }
     }
   }
   if (streq(s, "pc")) {
-    *success = true;
-    return cpu.pc;
+    return &cpu.pc;
   }
-  return 0xdeadbeef;
+  return NULL;
 }

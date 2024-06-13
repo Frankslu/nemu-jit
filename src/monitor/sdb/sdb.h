@@ -18,6 +18,24 @@
 
 #include <common.h>
 
+typedef struct token {
+  int type;
+  bool unary;
+  char name[8];
+  union {
+    word_t num;
+    word_t *reg;
+  } val;
+} Token;
+
+typedef struct watchpoint {
+  int NO;
+  struct watchpoint *next;
+  char *str;
+  word_t res;
+  Token *prefix;
+} WP;
+
 word_t expr(char *e, bool *success);
 
 #endif

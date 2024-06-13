@@ -15,4 +15,13 @@
 
 NAME = gen-expr
 SRCS = gen-expr.c
+INC_PATH = $(NEMU_HOME)/include
+CFLAGS += -g -Og
 include $(NEMU_HOME)/scripts/build.mk
+
+RES_FILE ?= $(BUILD_DIR)/input.txt
+LOOP ?= 100000
+
+run: $(BINARY)
+	@$(BINARY) $(LOOP) $(RES_FILE)
+

@@ -58,6 +58,17 @@ config MODE_SYSTEM
 endchoice
 
 choice
+  prompt "Running program"
+  default NEMU_MAIN
+
+config NEMU_MAIN
+  bool "run nemu-main program"
+
+config EXPR_TEST
+  bool "run expr-test program"
+endchoice
+
+choice
   prompt "Build target"
   default TARGET_NATIVE_ELF
 config TARGET_NATIVE_ELF

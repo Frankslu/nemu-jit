@@ -14,6 +14,7 @@
 ***************************************************************************************/
 
 #include <common.h>
+#ifdef CONFIG_NEMU_MAIN
 
 void init_monitor(int, char *[]);
 void am_init_monitor();
@@ -33,3 +34,4 @@ int main(int argc, char *argv[]) {
 
   return is_exit_status_bad();
 }
+#endif

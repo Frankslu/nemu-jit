@@ -64,7 +64,10 @@ typedef union {
 typedef MUXDEF(CONFIG_ISA64, uint64_t, uint32_t) word_t;
 typedef MUXDEF(CONFIG_ISA64, int64_t, int32_t)  sword_t;
 #define FMT_WORD MUXDEF(CONFIG_ISA64, FMT_UINT64, FMT_UINT32)
+#define FMT_WORD_2 MUXDEF(CONFIG_ISA64, "0x%" PRIx64, "0x%" PRIx32)
 #define fmt_word(x) MUXDEF(CONFIG_ISA64, fmt_uint64, fmt_uint32)(x)
+#define WORD_MAX MUXDEF(CONFIG_ISA64, UINT64_MAX, UINT32_MAX)
+#define SWORD_MAX MUXDEF(CONFIG_ISA64, INT64_MAX, INT32_MAX)
 
 typedef word_t vaddr_t;
 #define FMT_VADDR FMT_WORD

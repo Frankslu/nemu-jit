@@ -144,6 +144,7 @@ static int cmd_x(char *args){
 	return 0;
 }
 
+#ifdef CONFIG_WATCH_POINT
 static int cmd_d(char *args) {
   if (args == NULL)
     free_wp(-1);
@@ -152,6 +153,7 @@ static int cmd_d(char *args) {
 
   return 0;
 }
+#endif
 
 static int cmd_help(char *args);
 
@@ -167,7 +169,7 @@ static struct {
   {"p", "print", cmd_p },
   {"info", "print information", cmd_info},
   {"x", "scan memory", cmd_x},
-  {"d", "delete watchpoint", cmd_d},
+  IFDEF(CONFIG_WATCH_POINT, {"d", "delete watchpoint", cmd_d},)
   IFDEF(CONFIG_WATCH_POINT,{"w", "set watchpoint", cmd_w},)
 };
 
@@ -242,5 +244,5 @@ void init_sdb() {
   init_regex();
 
   /* Initialize the watchpoint pool. */
-  init_wp_pool();
+  IFDEF(CONFIG_WATCH_POINT, init_wp_pool();)
 }

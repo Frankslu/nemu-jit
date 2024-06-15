@@ -24,18 +24,14 @@ typedef struct token {
   char name[8];
   union {
     word_t num;
-    word_t *reg;
   } val;
 } Token;
 
-typedef struct watchpoint {
-  int NO;
-  struct watchpoint *next;
-  char *str;
-  word_t res;
-  Token *prefix;
-} WP;
-
 word_t expr(char *e, bool *success);
+Token *make_suffix(char *e);
+word_t eval(Token *suffix_expr, bool *success);
 
+int new_wp(char *args);
+bool free_wp(int NO);
+void display_watchpoint();
 #endif

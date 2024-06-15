@@ -15,6 +15,7 @@
 
 #include <isa.h>
 #include <cpu/cpu.h>
+#include <memory/vaddr.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "sdb.h"
@@ -33,7 +34,7 @@ static char* rl_gets() {
     line_read = NULL;
   }
 
-  line_read = readline("(nemu) ");
+  line_read = readline(ANSI_FMT("(nemu) ", ANSI_FG_GREEN));
 
   if (line_read && *line_read) {
     add_history(line_read);
@@ -43,7 +44,7 @@ static char* rl_gets() {
 }
 
 static int cmd_c(char *args) {
-  cpu_exec(-1);
+  cpu_exec(UINT64_MAX);
   return 0;
 }
 
@@ -54,11 +55,11 @@ static int cmd_q(char *args) {
 }
 
 static int cmd_si(char *args) {
-  if (args == NULL) {
+  if (args == NULL)
     cpu_exec(1);
-  } else {
-    cpu_exec(atoi(args));
-  }
+  else
+    cpu_exec(strtoll(args, NULL, 0));
+
   return 0;
 }
 
@@ -69,6 +70,86 @@ static int cmd_p(char *args) {
     if (success)
       printf(FMT_WORD"\n", fmt_word(res));
   }
+  return 0;
+}
+
+static int cmd_info(char *args) {
+	if (NULL == args){
+		printf(ANSI_FMT("command error\n", ANSI_FG_RED));
+		return 0;
+	}
+
+  struct {
+    char *name;
+    void (*handler)();
+  } info_table [] = {
+    {"r", isa_reg_display},
+    {"w", display_watchpoint}
+  };
+
+  for (int i = 0; i < ARRLEN(info_table); i++)
+    if (streq(info_table[i].name, args)) {
+      info_table[i].handler();
+      return 0;
+    }
+
+  printf("Unknown arg\n");
+  return 0;
+}
+
+#ifdef CONFIG_WATCH_POINT
+static int cmd_w(char *args) {
+	if (NULL == args){
+		printf(ANSI_FMT("command error\n", ANSI_FG_RED));
+		return 0;
+	}
+
+  int NO;
+  if ((NO = new_wp(args)) == -1)
+    printf("Set watchpoint fail\n");
+  else
+    printf("Set watchpoint %2d\n", NO);
+
+  return 0;
+}
+#endif
+
+static int cmd_x(char *args){
+	if (NULL == args){
+		printf(ANSI_FMT("command error: need size\n", ANSI_FG_RED));
+		return 0;
+	}
+
+	args = strtok(args, " ");
+  int size = atoi(args);
+	args = args + strlen(args) + 1;
+  if (args == NULL) {
+		printf(ANSI_FMT("command error: need expr\n", ANSI_FG_RED));
+		return 0;
+  }
+
+	bool success = true;
+	word_t result = expr(args, &success);
+	if (success == false)
+		return 0;
+
+  not_exit_on_oob();
+  for (int i = 0; i < size;i++){
+    word_t ret = vaddr_read(result + 4 * i, 4);
+    if (is_oob())
+      return 0;
+    printf("0x%08lx:  %08lx\n", result + 4 * i, ret);
+  }
+
+	return 0;
+}
+
+static int cmd_d(char *args) {
+  if (args == NULL)
+    free_wp(-1);
+  else
+    free_wp(atoi(args));
+
   return 0;
 }
 
@@ -84,6 +165,10 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
   {"si", "step", cmd_si },
   {"p", "print", cmd_p },
+  {"info", "print information", cmd_info},
+  {"x", "scan memory", cmd_x},
+  {"d", "delete watchpoint", cmd_d},
+  IFDEF(CONFIG_WATCH_POINT,{"w", "set watchpoint", cmd_w},)
 };
 
 #define NR_CMD ARRLEN(cmd_table)
@@ -148,7 +233,7 @@ void sdb_mainloop() {
       }
     }
 
-    if (i == NR_CMD) { printf("Unknown command '%s'\n", cmd); }
+    if (i == NR_CMD) { printf(ANSI_FMT("Unknown command ", ANSI_FG_RED)"'%s'\n", cmd); }
   }
 }
 

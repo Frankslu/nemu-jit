@@ -21,6 +21,8 @@
 word_t vaddr_ifetch(vaddr_t addr, int len);
 word_t vaddr_read(vaddr_t addr, int len);
 void vaddr_write(vaddr_t addr, int len, word_t data);
+void not_exit_on_oob();
+bool is_oob();
 
 #define PAGE_SHIFT        12
 #define PAGE_SIZE         (1ul << PAGE_SHIFT)

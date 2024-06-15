@@ -120,6 +120,7 @@ static int get_token_num(char *e) {
         int type = rules[i].token_type;
         unsigned long long num;
         Token a;
+        bool success;
         switch (type) {
           case TK_NOTYPE:
             break;
@@ -131,7 +132,10 @@ static int get_token_num(char *e) {
             }
             strncpy(a.name, substr_start, substr_len);
             a.name[substr_len] = '\0';
-            if (isa_reg_str2val(&a.name[1]) == NULL) {
+            if (({
+                  isa_reg_str2val(&a.name[1], &success);
+                  success == false;
+                })) {
               printf("reg name error:\n");
               position -= substr_len;
               goto err;
@@ -199,9 +203,7 @@ static void make_token(char *e, Token *tokens) {
         case TK_REG:
           strncpy(tokens[nr_token].name, substr_start, substr_len);
           tokens[nr_token].name[substr_len] = '\0';
-          tokens[nr_token].type = type;
-          tokens[nr_token].val.reg = isa_reg_str2val(&tokens[nr_token].name[1]);
-          nr_token++;
+          tokens[nr_token++].type = type;
           break;
 
         case TK_NUM:
@@ -219,16 +221,14 @@ static void make_token(char *e, Token *tokens) {
       }
     }
   }
-  tokens[nr_token].type = TK_END;
-  strcpy(tokens[nr_token].name, "end");
+  tokens[nr_token] =
+      (Token){.type = TK_END, .name = "end", .unary = false, .val.num = 0};
 }
 
 typedef struct ast_node {
   Token tk;
   struct ast_node *left, *right;
 } Ast;
-
-#define alloc_ast() (tree_ptr++)
 
 static jmp_buf expr_env;
 static Token *token_ptr, *suffix_ptr;
@@ -239,66 +239,60 @@ static Ast *EP(Ast *node, int level);
 
 static inline int binary_op_level(int type) {
   switch (type) {
-  case '*':
-  case '/':
-  case '%':
-    return 2;
+    case '*':
+    case '/':
+    case '%': return 2;
 
-  case '+':
-  case '-':
-    return 3;
+    case '+':
+    case '-': return 3;
 
-  case TK_SL:
-  case TK_SRA:
-  case TK_SRL:
-    return 4;
+    case TK_SL:
+    case TK_SRA:
+    case TK_SRL: return 4;
 
-  case '<':
-  case TK_GEU:
-  case '>':
-  case TK_LEU:
-  case TK_GES:
-  case TK_LES:
-  case TK_GS:
-  case TK_LS:
-    return 5;
+    case '<':
+    case TK_GEU:
+    case '>':
+    case TK_LEU:
+    case TK_GES:
+    case TK_LES:
+    case TK_GS:
+    case TK_LS: return 5;
 
-  case TK_EQ:
-  case TK_NE:
-    return 6;
+    case TK_EQ:
+    case TK_NE: return 6;
 
-  case '&':
-    return 7;
+    case '&': return 7;
 
-  case '^':
-    return 8;
+    case '^': return 8;
 
-  case '|':
-    return 9;
+    case '|': return 9;
 
-  case TK_LAND:
-    return 10;
+    case TK_LAND: return 10;
 
-  case TK_LOR:
-    return 11;
+    case TK_LOR: return 11;
 
-  default:
-    printf("Unknow binary op\n");
-    longjmp(expr_env, 1);
+    default:
+      printf("Unknow binary op\n");
+      longjmp(expr_env, 1);
   }
 }
 
 static inline bool is_unary_op(int type) {
   switch (type) {
-  case '+':
-  case '-':
-  case '*':
-  case '!':
-  case '~':
-    return true;
-  default:
-    return false;
+    case '+':
+    case '-':
+    case '*':
+    case '!':
+    case '~': return true;
+    default: return false;
   }
+}
+
+static inline Ast *alloc_ast(Token *token, bool unary) {
+  tree_ptr->tk = *token;
+  tree_ptr->tk.unary = unary;
+  return tree_ptr++;
 }
 
 static const char *get_token_name(int type) {
@@ -325,9 +319,7 @@ static Ast *EP(Ast *node, int level) {
   if (type == TK_END || type == ')' || binary_op_level(type) > level) {
     return node;
   } else if (binary_op_level(type) == level) {
-    father = alloc_ast();
-    father->tk = *match(type);
-    father->tk.unary = false;
+    father = alloc_ast(match(type), false);
     father->left = node;
     father->right = E(node, level - 1);
     return EP(father, level);
@@ -350,9 +342,7 @@ static Ast *E(Ast *node, int level) {
     }
   } else {
     if (is_unary_op(type)) {
-      node = alloc_ast();
-      node->tk = *match(type);
-      node->tk.unary = true;
+      node = alloc_ast(match(type), true);
       node->left = NULL;
       node->right = E(node, 1);
       return node;
@@ -362,9 +352,7 @@ static Ast *E(Ast *node, int level) {
       match(')');
       return node;
     } else if (type == TK_NUM || type == TK_REG) {
-      node = alloc_ast();
-      node->tk = *match(type);
-      node->tk.unary = false;
+      node = alloc_ast(match(type), false);
       node->left = NULL;
       node->right = NULL;
       return node;
@@ -395,7 +383,7 @@ static void ast_to_suffix(Ast *node) {
   *(suffix_ptr++) = node->tk;
 }
 
-static Token *make_suffix(char *e) {
+Token *make_suffix(char *e) {
   int nr_token = get_token_num(e);
   if (nr_token == 0) {
     printf("token num is 0\n");
@@ -409,16 +397,16 @@ static Token *make_suffix(char *e) {
   Token *suffix_head = suffix_ptr;
   Ast *tree_head = tree_ptr;
   Ast *root = NULL;
-
   make_token(e, token_ptr);
+
   int err = setjmp(expr_env);
   if (err == 0) {
     root = make_ast(root);
     ast_to_suffix(root);
-    suffix_ptr->type = TK_END;
-    suffix_ptr->unary = false;
-    suffix_ptr->val.num = 0;
-    strcpy(suffix_ptr->name, "end");
+    *suffix_ptr =
+        (Token){.type = TK_END, .name = "end", .unary = false, .val.num = 0};
+    free(tokens_head);
+    free(tree_head);
     return suffix_head;
   } else if (err == 1) {
     token_ptr--;
@@ -436,9 +424,11 @@ static Token *make_suffix(char *e) {
         printf("%s ", tokens_head[i].name);
 
     printf("\n%*.s^\n", blank_len, "");
+
     free(suffix_ptr);
     free(tokens_head);
     free(tree_head);
+
     return NULL;
   } else {
     Assert(0, "Unknown err\n");
@@ -452,8 +442,10 @@ bool isVal(Token token) {
 word_t getVal(Token token) {
   if (token.type == TK_NUM)
     return token.val.num;
-  else if (token.type == TK_REG)
-    return *token.val.reg;
+  else if (token.type == TK_REG) {
+    // we have checked reg at get_token_num, so we don't check it again
+    return isa_reg_str2val(&token.name[1], &(bool){true});
+  }
   else {
     printf("Should be number or reg\n");
     assert(0);
@@ -464,7 +456,13 @@ word_t unary_val(word_t val) {
   switch ((suffix_ptr++)[0].type) {
     case '+': return val;
     case '-': return -val;
-    case '*': return vaddr_read(val, sizeof(word_t));
+    case '*': {
+      word_t res = vaddr_read(val, sizeof(word_t));
+      if (is_oob()) {
+        longjmp(expr_env, 1);
+      }
+      return res;
+    }
     case '!': return !val;
     case '~': return ~val;
     default: Assert(0, "Should be binary op here\ntype: %s\n", suffix_ptr[-1].name);
@@ -512,39 +510,43 @@ word_t binary_val(word_t current, word_t next) {
 }
 
 static word_t _eval(word_t val1, word_t val2) {
-  while (1){
-    if (suffix_ptr[0].type == TK_END) {
-      return val2;
-    } else if (isVal(suffix_ptr[0])) {
-      val2 = _eval(val2, getVal((suffix_ptr++)[0]));
-    } else if (suffix_ptr[0].unary == true) {
-      val2 = unary_val(val2);
-    } else {
-      return binary_val(val1, val2);
-    }
+  if (suffix_ptr[0].type == TK_END)
+    return val2;
+  else if (isVal(suffix_ptr[0]))
+    val2 = _eval(val2, getVal((suffix_ptr++)[0]));
+  else if (suffix_ptr[0].unary == true)
+    val2 = unary_val(val2);
+  else
+    return binary_val(val1, val2);
+ 
+  return _eval(val1, val2);
+}
+
+word_t eval(Token *suffix_expr, bool *success) {
+  not_exit_on_oob();
+  *success = true;
+  suffix_ptr = suffix_expr;
+  int err = setjmp(expr_env);
+  if (err == 0) {
+    word_t res = _eval(0, 0);
+    return res;
+  } else {
+    *success = false;
+    return 0;
   }
 }
 
-word_t eval(Token *suffix_expr) {
-  suffix_ptr = suffix_expr;
-  return _eval(0, 0);
-}
-
 word_t expr(char *e, bool *success) {
+  *success = true;
   suffix_ptr = make_suffix(e);
   if (suffix_ptr == NULL) {
     *success = false;
     return 0;
   }
-
-  int err = setjmp(expr_env);
-  if (err == 0) {
-    return eval(suffix_ptr);
-  } else if (err == 1) {
-    return 0;
-  } else {
-    Assert(0, "Unknown err\n");
-  }
+  Token *suffix_head = suffix_ptr;
+  word_t res = eval(suffix_ptr, success);
+  free(suffix_head);
+  return res;
 }
 
 // word_t eval(Ast *node) {

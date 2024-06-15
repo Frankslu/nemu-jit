@@ -24,7 +24,10 @@ static uint8_t *pmem = NULL;
 static uint8_t pmem[CONFIG_MSIZE] PG_ALIGN = {};
 #endif
 
-uint8_t* guest_to_host(paddr_t paddr) { return pmem + paddr - CONFIG_MBASE; }
+static bool exit_on_oob = true;
+static bool oob_happen = false;
+
+uint8_t* guest_to_host(paddr_t paddr) { return pmem + (paddr - CONFIG_MBASE); }
 paddr_t host_to_guest(uint8_t *haddr) { return haddr - pmem + CONFIG_MBASE; }
 
 static word_t pmem_read(paddr_t addr, int len) {
@@ -36,9 +39,28 @@ static void pmem_write(paddr_t addr, int len, word_t data) {
   host_write(guest_to_host(addr), len, data);
 }
 
+void not_exit_on_oob() {
+  exit_on_oob = false;
+}
+
+// when you set not_exit_on_oob, you must use is_oob after use addr_read
+bool is_oob() {
+  bool tmp = oob_happen;
+  oob_happen = false;
+  return tmp;
+}
+
 static void out_of_bound(paddr_t addr) {
-  panic("address = " FMT_PADDR " is out of bound of pmem [" FMT_PADDR ", " FMT_PADDR "] at pc = " FMT_WORD,
-      fmt_paddr(addr), fmt_paddr(PMEM_LEFT), fmt_paddr(PMEM_RIGHT), fmt_word(cpu.pc));
+  if (exit_on_oob)
+    panic("address = " FMT_PADDR " is out of bound of pmem [" FMT_PADDR ", " FMT_PADDR "] at pc = " FMT_WORD,
+        fmt_paddr(addr), fmt_paddr(PMEM_LEFT), fmt_paddr(PMEM_RIGHT), fmt_word(cpu.pc));
+  else {
+    Assert(oob_happen == false, "You used not_exit_o_oob but not use is_oob after use addr_read\n");
+    exit_on_oob = true;
+    oob_happen = true;
+    Log("address = " FMT_PADDR " is out of bound of pmem [" FMT_PADDR ", " FMT_PADDR "] at pc = " FMT_WORD,
+        fmt_paddr(addr), fmt_paddr(PMEM_LEFT), fmt_paddr(PMEM_RIGHT), fmt_word(cpu.pc));
+  }
 }
 
 void init_mem() {

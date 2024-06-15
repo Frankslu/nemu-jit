@@ -32,21 +32,24 @@ const char *regs[2][32] = {
 };
 
 void isa_reg_display() {
+  printf("    pc: " FMT_VADDR "\n", fmt_vaddr(cpu.pc));
   for (int i = 0; i < 32; i++) {
     printf("%02d %3s: " FMT_WORD "\n", i, reg_name(i), fmt_word(gpr(i)));
   }
 }
 
-word_t *isa_reg_str2val(const char *s) {
+word_t isa_reg_str2val(const char *s, bool *success) {
+  *success = true;
   for (int i = 0; i < 2; i++) {
     for (int j = 0; j < 32; j++) {
       if (streq(s, regs[i][j])) {
-        return &gpr(j);
+        return gpr(j);
       }
     }
   }
   if (streq(s, "pc")) {
-    return &cpu.pc;
+    return cpu.pc;
   }
-  return NULL;
+  *success = false;
+  return 0;
 }

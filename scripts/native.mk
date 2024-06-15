@@ -13,7 +13,6 @@
 # See the Mulan PSL v2 for more details.
 #**************************************************************************************/
 
--include $(NEMU_HOME)/../Makefile
 include $(NEMU_HOME)/scripts/build.mk
 
 include $(NEMU_HOME)/tools/difftest.mk
@@ -24,27 +23,44 @@ compile_git:
 
 # Some convenient rules
 
-override ARGS ?= --log=$(BUILD_DIR)/nemu-log.txt
+ifdef CONFIG_NEMU_MAIN
+override ARGS ?= --log=$(BUILD_DIR)/log/
 override ARGS += $(ARGS_DIFF)
+IMG ?=
+endif
+ifdef CONFIG_EXPR_TEST
+override ARGS += $(NEMU_HOME)/tools/gen-expr/build/input.txt
+IMG :=
+endif
 
 # Command to execute NEMU
-IMG ?=
 NEMU_EXEC := $(BINARY) $(ARGS) $(IMG)
 
 run-env: $(BINARY) $(DIFF_REF_SO)
+	-@mkdir -p $(BUILD_DIR)/log
+	@echo $(CFLAGS)
 
 run: run-env
 	$(call git_commit, "run NEMU")
-	echo $(CFLAGS)
 	$(NEMU_EXEC)
 
 gdb: run-env
 	$(call git_commit, "gdb NEMU")
 	gdb -s $(BINARY) --args $(NEMU_EXEC)
 
+vgrind: run-env
+	@if [ "$(CONFIG_CC_ASAN)" = "y" ] ; then \
+		echo "Do not run vagrind with asan"; \
+	else \
+		valgrind --leak-check=full -s $(NEMU_EXEC); \
+	fi
+
 clangd:
-	bear -- make -B -j
+	bear -- make -B -j8 run
 	cp compile_commands.json build
+
+spike:
+	$(MAKE) -B $(DIFF_REF_SO)
 
 clean-tools = $(dir $(shell find ./tools -maxdepth 2 -mindepth 2 -name "Makefile"))
 $(clean-tools):
@@ -52,4 +68,4 @@ $(clean-tools):
 clean-tools: $(clean-tools)
 clean-all: clean distclean clean-tools
 
-.PHONY: run gdb run-env clean-tools clean-all $(clean-tools)
+.PHONY: run gdb run-env clean-tools clean-all $(clean-tools) vgrind clangd

@@ -18,16 +18,22 @@ ifeq ($(wildcard repo/spike_main),)
   $(shell git clone --depth=1 git@github.com:NJU-ProjectN/riscv-isa-sim $(REPO_PATH))
 endif
 
-REPO_BUILD_PATH = $(REPO_PATH)/build
-REPO_MAKEFILE = $(REPO_BUILD_PATH)/Makefile
+REPO_BUILD_PATH := $(REPO_PATH)/build
+REPO_MAKEFILE := $(REPO_BUILD_PATH)/Makefile
 $(REPO_MAKEFILE):
 	@mkdir -p $(@D)
 	cd $(@D) && $(abspath $(REPO_PATH))/configure
 	sed -i -e 's/-g -O2/-O2/' $@
 
-SPIKE = $(REPO_BUILD_PATH)/spike
-$(SPIKE): $(REPO_MAKEFILE)
-	CFLAGS="-fvisibility=hidden" CXXFLAGS="-fvisibility=hidden" $(MAKE) -C $(^D)
+SPIKE := $(REPO_BUILD_PATH)/spike
+REPO_FILE := $(shell find $(REPO_PATH) -type f)
+REPO_FILE := $(filter-out $(REPO_MAKEFILE), $(REPO_FILE))
+REPO_FILE := $(filter-out $(SPIKE), $(REPO_FILE))
+$(SPIKE): $(REPO_MAKEFILE) $(REPO_FILE)
+	CFLAGS="-fvisibility=hidden" CXXFLAGS="-fvisibility=hidden" $(MAKE) -C $(<D)
+
+$(REPO_FILE):
+	@cd
 
 BUILD_DIR = ./build
 $(shell mkdir -p $(BUILD_DIR))
@@ -50,5 +56,5 @@ clean:
 
 all: $(BINARY)
 .DEFAULT_GOAL = all
-
-.PHONY: all clean $(SPIKE)
+# $(info $(REPO_FILE))
+.PHONY: all clean

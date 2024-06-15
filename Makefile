@@ -24,13 +24,16 @@ endif
 
 remove_quote = $(patsubst "%",%,$(1))
 
+# Platform related configurations
+READLINE_PATH = -L$(HOME)/.local/readline/lib -Wl,-rpath=$(HOME)/.local/readline/lib
+
 # Extract variabls from menuconfig
 GUEST_ISA ?= $(call remove_quote,$(CONFIG_ISA))
 ENGINE ?= $(call remove_quote,$(CONFIG_ENGINE))
 NAME    = $(GUEST_ISA)-nemu-$(ENGINE)
 
 # Include all filelist.mk to merge file lists
-FILELIST_MK = $(shell find -L ./src -name "filelist.mk")
+FILELIST_MK = $(shell find -L ./src ./test -name "filelist.mk")
 include $(FILELIST_MK)
 
 # Filter out directories and files in blacklist to obtain the final set of source files
@@ -43,8 +46,12 @@ SRCS = $(filter-out $(SRCS-BLACKLIST-y),$(SRCS-y))
 CC = $(call remove_quote,$(CONFIG_CC))
 CFLAGS_BUILD += $(call remove_quote,$(CONFIG_CC_OPT))
 CFLAGS_BUILD += $(if $(CONFIG_CC_LTO),-flto,)
-CFLAGS_BUILD += $(if $(CONFIG_CC_DEBUG),-ggdb3 -gdwarf-5 -g3 -fno-eliminate-unused-debug-symbols,)
+CFLAGS_BUILD += $(if $(CONFIG_CC_DEBUG),-ggdb3 -gdwarf-5 -g3,)
 CFLAGS_BUILD += $(if $(CONFIG_CC_ASAN),-fsanitize=address,)
+CFLAGS_BUILD += $(if $(CONFIG_CC_UBSAN),-fsanitize=undefined,)
+CFLAGS_BUILD += $(if $(CONFIG_CC_WALL),-Wall -Werror,)
+CFLAGS_BUILD += $(if $(CONFIG_CC_EXTRA),-Wextra,)
+CFLAGS_BUILD += $(if $(CONFIG_CC_STDC),-pedantic,)
 CFLAGS_TRACE += -DITRACE_COND=$(if $(CONFIG_ITRACE_COND),$(call remove_quote,$(CONFIG_ITRACE_COND)),true)
 CFLAGS  += $(CFLAGS_BUILD) $(CFLAGS_TRACE) -D__GUEST_ISA__=$(GUEST_ISA)
 LDFLAGS += $(CFLAGS_BUILD)

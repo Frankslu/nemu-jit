@@ -20,6 +20,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <generated/autoconf.h>
 #include <macro.h>
@@ -35,15 +36,47 @@
 #define PMEM64 1
 #endif
 
+typedef union {
+  uint64_t word;
+  struct {
+    uint16_t a0;
+    uint16_t a1;
+    uint16_t a2;
+    uint16_t a3;
+  } fmt;
+} _fmt_uint64;
+
+typedef union {
+  uint32_t word;
+  struct {
+    uint16_t a0;
+    uint16_t a1;
+  } fmt;
+} _fmt_uint32;
+
+#define FMT_UINT64 "0x%04" PRIx16 "_%04" PRIx16 "_%04" PRIx16 "_%04" PRIx16
+#define fmt_uint64(x) ((_fmt_uint64)(x)).fmt.a3, ((_fmt_uint64)(x)).fmt.a2, \
+  ((_fmt_uint64)(x)).fmt.a1, ((_fmt_uint64)(x)).fmt.a0
+
+#define FMT_UINT32 "0x%04" PRIx16 "_%04" PRIx16
+#define fmt_uint32(x) ((_fmt_uint32)(x)).fmt.a1, ((_fmt_uint32)(x)).fmt.a0
+
 typedef MUXDEF(CONFIG_ISA64, uint64_t, uint32_t) word_t;
 typedef MUXDEF(CONFIG_ISA64, int64_t, int32_t)  sword_t;
-#define FMT_WORD MUXDEF(CONFIG_ISA64, "0x%016" PRIx64, "0x%08" PRIx32)
+#define FMT_WORD MUXDEF(CONFIG_ISA64, FMT_UINT64, FMT_UINT32)
+#define FMT_WORD_2 MUXDEF(CONFIG_ISA64, "0x%" PRIx64, "0x%" PRIx32)
+#define fmt_word(x) MUXDEF(CONFIG_ISA64, fmt_uint64, fmt_uint32)(x)
+#define WORD_MAX MUXDEF(CONFIG_ISA64, UINT64_MAX, UINT32_MAX)
+#define SWORD_MAX MUXDEF(CONFIG_ISA64, INT64_MAX, INT32_MAX)
 
 typedef word_t vaddr_t;
+#define FMT_VADDR FMT_WORD
+#define fmt_vaddr(x) fmt_word(x)
 typedef MUXDEF(PMEM64, uint64_t, uint32_t) paddr_t;
-#define FMT_PADDR MUXDEF(PMEM64, "0x%016" PRIx64, "0x%08" PRIx32)
+#define FMT_PADDR MUXDEF(PMEM64, FMT_UINT64, FMT_UINT32)
+#define fmt_paddr(x) MUXDEF(PMEM64, fmt_uint64, fmt_uint32)(x)
 typedef uint16_t ioaddr_t;
 
-#include <debug.h>
+#include <utils.h>
 
 #endif

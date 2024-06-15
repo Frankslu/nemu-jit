@@ -58,6 +58,17 @@ config MODE_SYSTEM
 endchoice
 
 choice
+  prompt "Running program"
+  default NEMU_MAIN
+
+config NEMU_MAIN
+  bool "run nemu-main program"
+
+config EXPR_TEST
+  bool "run expr-test program"
+endchoice
+
+choice
   prompt "Build target"
   default TARGET_NATIVE_ELF
 config TARGET_NATIVE_ELF
@@ -121,6 +132,26 @@ config CC_DEBUG
 config CC_ASAN
   depends on MODE_SYSTEM
   bool "Enable address sanitizer"
+  default n
+
+config CC_UBSAN
+  bool "Enable undefined behavior sanitizer"
+  default n
+
+config CC_UB
+  bool "Enable undefined behavior test"
+  default n
+
+config CC_WALL
+  bool "Enable Wall and Werror"
+  default y
+
+config CC_STDC
+  bool "Enable pedantic"
+  default n
+
+config CC_WEXTRA
+  bool "Enable Wextra"
   default n
 endmenu
 
@@ -213,5 +244,9 @@ endchoice
 config RT_CHECK
   bool "Enable runtime checking"
   default y
+
+config WATCH_POINT
+  bool "Enable watch point"
+  default n
 
 endmenu

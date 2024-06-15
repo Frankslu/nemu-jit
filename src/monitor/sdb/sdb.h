@@ -18,6 +18,20 @@
 
 #include <common.h>
 
-word_t expr(char *e, bool *success);
+typedef struct token {
+  int type;
+  bool unary;
+  char name[8];
+  union {
+    word_t num;
+  } val;
+} Token;
 
+word_t expr(char *e, bool *success);
+Token *make_suffix(char *e);
+word_t eval(Token *suffix_expr, bool *success);
+
+int new_wp(char *args);
+bool free_wp(int NO);
+void display_watchpoint();
 #endif

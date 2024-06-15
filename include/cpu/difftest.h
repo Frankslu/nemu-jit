@@ -44,7 +44,7 @@ static inline bool difftest_check_reg(const char *name, vaddr_t pc, word_t ref, 
   if (ref != dut) {
     Log("%s is different after executing instruction at pc = " FMT_WORD
         ", right = " FMT_WORD ", wrong = " FMT_WORD ", diff = " FMT_WORD,
-        name, pc, ref, dut, ref ^ dut);
+        name, fmt_word(pc), fmt_word(ref), fmt_word(dut), fmt_word(ref ^ dut));
     return false;
   }
   return true;

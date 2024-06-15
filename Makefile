@@ -24,6 +24,9 @@ endif
 
 remove_quote = $(patsubst "%",%,$(1))
 
+# Platform related configurations
+READLINE_PATH = -L$(HOME)/.local/readline/lib -Wl,-rpath=$(HOME)/.local/readline/lib
+
 # Extract variabls from menuconfig
 GUEST_ISA ?= $(call remove_quote,$(CONFIG_ISA))
 ENGINE ?= $(call remove_quote,$(CONFIG_ENGINE))

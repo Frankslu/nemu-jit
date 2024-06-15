@@ -50,7 +50,11 @@ gdb: run-env
 	gdb -s $(BINARY) --args $(NEMU_EXEC)
 
 vgrind: run-env
-	valgrind --leak-check=full -s $(NEMU_EXEC)
+	@if [ "$(CONFIG_CC_ASAN)" = "y" ] ; then \
+		echo "Do not run vagrind with asan"; \
+	else \
+		valgrind --leak-check=full -s $(NEMU_EXEC); \
+	fi
 
 clangd:
 	bear -- make -B -j8 run

@@ -138,7 +138,11 @@ static int cmd_x(char *args){
     word_t ret = vaddr_read(result + 4 * i, 4);
     if (is_oob())
       return 0;
+#ifdef CONFIG_ISA64
     printf("0x%08lx:  %08lx\n", result + 4 * i, ret);
+#else
+    printf("0x%08x:  %08x\n", result + 4 * i, ret);
+#endif
   }
 
 	return 0;

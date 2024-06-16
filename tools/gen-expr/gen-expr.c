@@ -63,17 +63,21 @@ static char *code_format1 =
 
 #define WORDdfmt MUXDEF(CONFIG_ISA64, PRIu64, PRIu32)
 #define WORDxfmt MUXDEF(CONFIG_ISA64, PRIx64, PRIx32)
-#define suffix MUXDEF(CONFIG_ISA64, "LLU", "LU")
+#define suffix MUXDEF(CONFIG_ISA64, "LU", "U")
 
 static void gen_num() {
+#ifdef CONFIG_ISA64
   word_t num = ((uint64_t)rand()) << 32 | ((uint64_t)rand());
+#else
+  word_t num = (word_t)rand();
+#endif
 
   if (rand() % 2) {
     c_buf_pos += sprintf(c_buf + c_buf_pos, "%" WORDdfmt suffix, num);
-    expr_buf_pos += sprintf(expr_buf + expr_buf_pos, "%ld", num);
+    expr_buf_pos += sprintf(expr_buf + expr_buf_pos, "%" WORDdfmt, num);
   } else {
     c_buf_pos += sprintf(c_buf + c_buf_pos, "0x%" WORDxfmt suffix, num);
-    expr_buf_pos += sprintf(expr_buf + expr_buf_pos, "0x%lx", num);
+    expr_buf_pos += sprintf(expr_buf + expr_buf_pos, "0x%" WORDxfmt, num);
   }
 
   token_num++;

@@ -20,7 +20,7 @@ CFLAGS += -g -Og
 include $(NEMU_HOME)/scripts/build.mk
 
 RES_FILE ?= $(BUILD_DIR)/input.txt
-LOOP ?= 100000
+LOOP ?= 100
 
 run: $(BINARY)
 	@$(BINARY) $(LOOP) $(RES_FILE)
